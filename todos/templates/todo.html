@@ -1,0 +1,186 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="{% static 'css/todo.css' %}">
+</head>
+<body>
+  <div class="main">
+    <div class="todos">
+      <form method="post" name="frm">
+      {% csrf_token %}
+      <h1>{{ project.title }}</h1>
+      <div class="textadd">
+        <input type="text" id="inp" placeholder="Add your text" class="ta">
+        <button class="bu" onclick="addTodo()">Add</button>
+      </div>
+      <h3>Completed</h3>
+        <ul class="completed-list">
+          {% for todo in todos %}
+          {% if todo.status %}
+            <li>
+              <input type="checkbox" id="todo-{{ todo.id }}" data-todo-id="{{ todo.id }}" {% if todo.status == 'complete' %} checked {% endif %} checked>
+              <label for="todo-{{ todo.id }}">{{ todo.description }} - {{ todo.updated_date }}</label>&nbsp;&nbsp;
+              <button class="ss" onclick="updateTodoStatus()"><p>EDIT</p></button>&nbsp;&nbsp;
+              <button class="ee" onclick="deleteTodo()"><P>DELETE</P></button>            
+            </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      <h3>Pending</h3>
+        <ul class="pending-list">
+          {% for todo in todos %}
+          {% if not todo.status %}
+            <li>
+              <input type="checkbox" id="todo-{{ todo.id }}" data-todo-id="{{ todo.id }}" {% if todo.status == 'complete' %} checked {% endif %}>
+              <label for="todo-{{ todo.id }}">{{ todo.description }} - {{ todo.created_date }}</label>&nbsp;&nbsp;
+              <a href="{% url 'edit' todo.id  %}" class="ed"><p>EDIT</p></a>&nbsp;&nbsp;
+              <a href="{% url 'delete' todo.id  %}" class="dd"><p>DELETE</p></a>            
+            </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </form>
+    </div>
+  </div>
+
+<script>
+
+function addTodo() {
+    const description = document.getElementById('inp').value;
+    fetch('/list/add_todo_ajax/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ description: description })
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Todo added successfully');
+            return response.json();
+        } else {
+            console.error('Failed to add todo');
+            throw new Error('Failed to add todo');
+        }
+    })
+    .then(data => {
+        const pendingList = document.querySelector('.pending-list');
+        const newItem = document.createElement('li');
+        newItem.innerHTML = `
+            <input type="checkbox" id="todo-${data.id}" data-todo-id="${data.id}">
+            <label for="todo-${data.id}">${data.description} - ${data.created_date}</label>&nbsp;&nbsp;
+            
+        `;
+        pendingList.appendChild(newItem);
+    })
+    .catch(error => {
+        console.error('Error adding todo:', error);
+    });
+
+    const editLinks = document.querySelectorAll('.ed[data-edit-url]');
+    editLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const editUrl = this.getAttribute('data-edit-url');
+            console.log('Edit URL:', editUrl);
+        });
+    });
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.pending-list input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const todoId = this.getAttribute('data-todo-id');
+            const status = this.checked;
+
+            console.log("todoId :"+ todoId)
+            console.log("todoId :"+ status)
+
+            fetch(`http://127.0.0.1:8000/update_todo_status/${todoId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status })
+            })
+            
+            .then(response => {
+                if (response.ok) {
+                    console.log('Todo status updated successfully');
+                    if (status) {
+                        const todoItem = checkbox.parentElement;
+                        todoItem.remove(); 
+
+                        const completedList = document.querySelector('.completed-list');
+                        const completedItem = document.createElement('li');
+                        completedItem.innerText = todoItem.querySelector('label').innerText;
+                        completedList.appendChild(completedItem); 
+                    }
+                } else {
+                    console.error('Failed to update todo status');
+                }
+                
+            })
+            .catch(error => {
+                console.error('Error updating todo status:', error);
+            });
+        });
+    });
+});
+
+
+function deleteTodo(todoId) {
+    fetch(`/list/delete/${todoId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Todo deleted successfully');
+        } else {
+            console.error('Failed to delete todo');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting todo:', error);
+    });
+}
+
+
+function updateTodoStatus(todoId, status) {
+    fetch(`/list/update_todo_status/${todoId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Todo status updated successfully');
+            
+        } else {
+            console.error('Failed to update todo status');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating todo status:', error);
+    });
+}
+
+
+</script>
+</body>
+</html>

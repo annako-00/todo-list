@@ -1,0 +1,29 @@
+{% load static %}
+{% load custom_filters %}
+{{ some_variable|uuid_to_string }}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Document</title>
+     <link rel="stylesheet" href="{% static 'css/todo.css' %}">
+</head>
+<body>
+    <div class="pr">
+        <div class="proj">
+            <h1>Project List</h1>
+            
+                {% for project in projects %}
+                <div class="li">
+                    <li> {{ project.title }} : </li> 
+                     <a href="{% url 'todo' project_id=project.projectid|stringformat:'s' %}">View Todos</a>
+                </div>
+                {% endfor %}
+            
+        </div>
+    </div>
+</body>
+</html>

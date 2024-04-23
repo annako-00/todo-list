@@ -1,0 +1,44 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Document</title>
+     <link rel="stylesheet" href="{% static 'css/todo.css' %}">
+</head>
+<body class="lo">
+     
+     <div class="si"> 
+          <div class="frm"> 
+               <div class="magic">
+                    <h2>Sign in</h2>
+               </div>
+               <form method="post">
+                    {% csrf_token %}
+                    <div class="ai">
+                         <input type="text" placeholder="enter user name" name="username">
+                         <input type="password" name="passw1">
+                         <input type="submit" value="login">
+                         
+                         <div class="hrd" aria-placeholder="or"></div>
+
+                         
+                    </div>
+                    
+               </form>
+               
+          </div>
+     </div>
+     {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+      
+</body>
+</html>
